@@ -1,0 +1,632 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PHY 101 | 20-Question Practice Test</title>
+<style>
+:root {
+  --navy: #10213a;
+  --blue: #2563eb;
+  --pale: #eff6ff;
+  --ink: #172033;
+  --muted: #64748b;
+  --line: #dbe3ef;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: Arial, Helvetica, sans-serif;
+  background: #f4f7fb;
+  color: var(--ink);
+  line-height: 1.5;
+}
+header {
+  background: var(--navy);
+  color: white;
+  padding: 24px 16px;
+}
+.head, main {
+  width: min(900px, 100% - 28px);
+  margin: auto;
+}
+h1 { margin: 0 0 6px; font-size: clamp(1.45rem, 4vw, 2rem); }
+header p { margin: 0; color: #dbeafe; }
+main { padding: 20px 0 40px; }
+.panel {
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 18px;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 18px #10213a0a;
+}
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.timer {
+  font-weight: 800;
+  font-size: 1.25rem;
+  color: var(--blue);
+  background: var(--pale);
+  padding: 8px 14px;
+  border-radius: 10px;
+}
+.timer.warning { color: #b91c1c; background: #fee2e2; }
+.progress-wrap {
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 99px;
+  overflow: hidden;
+  margin-top: 14px;
+}
+.progress {
+  height: 100%;
+  width: 0;
+  background: var(--blue);
+  transition: width .15s;
+}
+.note { color: var(--muted); font-size: .94rem; }
+.question {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 16px;
+  margin: 14px 0;
+  background: white;
+}
+.q-title { font-weight: 700; margin: 0 0 12px; }
+.options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 9px;
+}
+.option {
+  text-align: left;
+  border: 1px solid #cbd5e1;
+  border-radius: 9px;
+  background: white;
+  color: var(--ink);
+  padding: 11px 12px;
+  cursor: pointer;
+  font-size: .98rem;
+}
+.option:hover { border-color: var(--blue); background: #f8fbff; }
+.option.selected {
+  border: 2px solid var(--blue);
+  background: #eff6ff;
+  padding: 10px 11px;
+  font-weight: 700;
+}
+.option:disabled { cursor: default; }
+button:focus-visible {
+  outline: 3px solid #93c5fd;
+  outline-offset: 2px;
+}
+.actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+}
+.primary, .secondary {
+  border: 0;
+  border-radius: 10px;
+  padding: 12px 18px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.primary { background: var(--blue); color: white; }
+.secondary { background: #e2e8f0; color: var(--ink); }
+.primary:disabled, .secondary:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+#results { display: none; }
+.score { font-size: 1.5rem; font-weight: 800; color: var(--blue); }
+.review-item { border-top: 1px solid var(--line); padding: 14px 0; }
+.correct { color: #166534; font-weight: 700; }
+.incorrect { color: #b91c1c; font-weight: 700; }
+.explanation { color: #475569; margin-top: 5px; }
+footer {
+  color: var(--muted);
+  text-align: center;
+  font-size: .85rem;
+  padding: 0 12px 24px;
+}
+@media(max-width: 560px) {
+  .options { grid-template-columns: 1fr; }
+  .panel { padding: 14px; }
+  .question { padding: 13px; }
+}
+@media print {
+  header { background: white; color: black; }
+  .actions, .timer, .progress-wrap { display: none; }
+  body { background: white; }
+}
+</style>
+</head>
+
+<body>
+<header>
+  <div class="head">
+    <h1>PHY 101 — General Physics I</h1>
+    <p>Mechanics: Space, Time and Motion | Practice CBT</p>
+  </div>
+</header>
+
+<main>
+  <section class="panel">
+    <div class="topbar">
+      <div>
+        <strong>20 questions · 10 minutes</strong><br>
+        <span class="note">
+          Choose one option per question. Your score and correct
+          answers appear only after submission.
+        </span>
+      </div>
+      <div class="timer" id="timer" aria-live="polite">10:00</div>
+    </div>
+
+    <div class="progress-wrap" aria-label="Test completion">
+      <div class="progress" id="progress"></div>
+    </div>
+
+    <p class="note" id="answeredCount">Answered: 0 / 20</p>
+  </section>
+
+  <form id="quizForm">
+    <div id="questions"></div>
+
+    <section class="panel">
+      <p class="note">
+        Check your selections before submitting. Submission reveals
+        the score, correct answers and brief explanations.
+      </p>
+
+      <div class="actions">
+        <button class="primary" id="submitBtn" type="submit">
+          Submit Test
+        </button>
+        <button class="secondary" type="button" id="clearBtn">
+          Clear All Answers
+        </button>
+      </div>
+    </section>
+  </form>
+
+  <section class="panel" id="results" aria-live="polite">
+    <h2>Test Results</h2>
+    <p class="score" id="scoreText"></p>
+    <p id="resultSummary"></p>
+    <p class="note">
+      Review below to see the correct answer and explanation
+      for every question.
+    </p>
+    <div id="review"></div>
+
+    <div class="actions">
+      <button class="primary" type="button" id="retryBtn">
+        Try Again
+      </button>
+      <button class="secondary" type="button" id="copyBtn">
+        Copy Result Summary
+      </button>
+    </div>
+  </section>
+</main>
+
+<footer>
+  Study practice based on the uploaded PHY 101 course PDF.
+  Not an official university examination.
+</footer>
+
+<script>
+const questions = [
+  {
+    q: "A body changes its position with time. Which pair of ideas is central to describing this motion in mechanics?",
+    options: [
+      "Colour and temperature",
+      "Motion and the forces related to it",
+      "Chemical composition and density",
+      "Shape and smell"
+    ],
+    answer: 1,
+    explanation: "The course notes introduce mechanics as the study of motion and the forces responsible for it."
+  },
+  {
+    q: "An observer describes a passenger as stationary while another observer sees the passenger moving. Which idea best explains this difference?",
+    options: [
+      "Dimensional homogeneity",
+      "Motion depends on the reference frame",
+      "All observers measure zero velocity",
+      "Time has direction"
+    ],
+    answer: 1,
+    explanation: "The notes state that motion is relative to the chosen reference frame."
+  },
+  {
+    q: "Which set correctly represents the three spatial coordinates of a point in ordinary three-dimensional space?",
+    options: [
+      "x, y and z",
+      "m, kg and s",
+      "i, j and s",
+      "length, mass and time only"
+    ],
+    answer: 0,
+    explanation: "Three-dimensional space is described using the x-, y- and z-directions."
+  },
+  {
+    q: "A quantity is described by a numerical value and a unit, but no direction. Which classification fits it?",
+    options: [
+      "Vector",
+      "Unit vector",
+      "Scalar",
+      "Position vector"
+    ],
+    answer: 2,
+    explanation: "A scalar has magnitude but no direction."
+  },
+  {
+    q: "Which option pairs a fundamental SI quantity with its SI unit?",
+    options: [
+      "Velocity — metre",
+      "Acceleration — second",
+      "Electric current — ampere",
+      "Force — kilogram"
+    ],
+    answer: 2,
+    explanation: "Electric current is a fundamental SI quantity measured in amperes."
+  },
+  {
+    q: "A student writes the dimensions of velocity as LT⁻². What quantity has the student actually written the dimensions for?",
+    options: ["Distance", "Velocity", "Acceleration", "Force"],
+    answer: 2,
+    explanation: "LT⁻² is the dimensional formula for acceleration; velocity has dimensions LT⁻¹."
+  },
+  {
+    q: "Given that force F = ma, and mass has dimension M while acceleration has dimension LT⁻², which dimensions must force have?",
+    options: ["MLT⁻²", "ML²T⁻²", "MT⁻¹", "LT⁻¹"],
+    answer: 0,
+    explanation: "Multiplying the dimensions of mass and acceleration gives M × LT⁻² = MLT⁻²."
+  },
+  {
+    q: "Which equation fails the dimensional-homogeneity test if x is a length, v is a velocity, and t is time?",
+    options: [
+      "x = vt",
+      "x = ½at², where a is acceleration",
+      "x = v + t",
+      "x = x"
+    ],
+    answer: 2,
+    explanation: "Velocity and time have different dimensions, so they cannot be added to form a length."
+  },
+  {
+    q: "A physical quantity has dimensions ML²T⁻². Which expression could produce these dimensions from mass, length and time?",
+    options: [
+      "Mass × acceleration",
+      "Mass × velocity",
+      "Mass × length² ÷ time²",
+      "Length ÷ time"
+    ],
+    answer: 2,
+    explanation: "M × L² ÷ T² gives ML²T⁻²."
+  },
+  {
+    q: "Which statement distinguishes a vector from a scalar?",
+    options: [
+      "A vector always has a larger value",
+      "A vector has magnitude and direction",
+      "A scalar must be measured in metres",
+      "A scalar changes direction continuously"
+    ],
+    answer: 1,
+    explanation: "Vectors have both magnitude and direction; scalars have magnitude only."
+  },
+  {
+    q: "A vector is written A = 3i + 4j. What is its magnitude?",
+    options: ["1", "5", "7", "12"],
+    answer: 1,
+    explanation: "For perpendicular components, |A| = √(3² + 4²) = √25 = 5."
+  },
+  {
+    q: "Which expression gives the position vector of a point with coordinates (4, −2, 5)?",
+    options: [
+      "4i − 2j + 5k",
+      "4 + (−2) + 5",
+      "4i + 2j − 5k",
+      "4ijk − 2"
+    ],
+    answer: 0,
+    explanation: "The position vector is r = xi + yj + zk, so the coordinates give 4i − 2j + 5k."
+  },
+  {
+    q: "Two vectors have magnitudes 5 and 4, with an angle of 30° between them. What is the magnitude of their cross product?",
+    options: ["0", "10", "20", "9"],
+    answer: 1,
+    explanation: "|A × B| = AB sin θ = 5 × 4 × sin 30° = 20 × ½ = 10."
+  },
+  {
+    q: "If A × B = C, which statement must be true when A and B are non-zero and not parallel?",
+    options: [
+      "C is parallel to A",
+      "C is parallel to B",
+      "C is perpendicular to both A and B",
+      "C must have zero magnitude"
+    ],
+    answer: 2,
+    explanation: "The cross product is perpendicular to both input vectors."
+  },
+  {
+    q: "Which result follows from reversing the order of a cross product?",
+    options: [
+      "B × A = A × B",
+      "B × A = −(A × B)",
+      "B × A = 0 for every pair",
+      "B × A = A + B"
+    ],
+    answer: 1,
+    explanation: "The cross product is anti-commutative: reversing the order reverses the direction."
+  },
+  {
+    q: "Using the standard unit-vector cross-product cycle, what is k × i?",
+    options: ["j", "−j", "i", "−k"],
+    answer: 0,
+    explanation: "The cyclic relations are i × j = k, j × k = i, and k × i = j."
+  },
+  {
+    q: "A runner moves from position x = 2 m to x = 9 m along a straight line. What is the displacement?",
+    options: ["−7 m", "7 m", "11 m", "18 m"],
+    answer: 1,
+    explanation: "Displacement is final position minus initial position: 9 m − 2 m = 7 m."
+  },
+  {
+    q: "A person walks 6 m east, then 6 m west back to the starting point. Which statement is correct?",
+    options: [
+      "Distance is 0 m and displacement is 12 m",
+      "Distance is 6 m and displacement is 6 m west",
+      "Distance is 12 m and displacement is 0 m",
+      "Distance and displacement are both 12 m"
+    ],
+    answer: 2,
+    explanation: "Distance is the total path travelled, 12 m. Since the person returns to the start, displacement is zero."
+  },
+  {
+    q: "A particle's position is x(t) = 3t² − 2t. What is its velocity at t = 2 s?",
+    options: ["4 m/s", "8 m/s", "10 m/s", "12 m/s"],
+    answer: 2,
+    explanation: "Velocity is the derivative of position: v(t) = 6t − 2. At t = 2 s, v = 12 − 2 = 10 m/s."
+  },
+  {
+    q: "A particle has velocity v(t) = 4t + 1 m/s. What is its acceleration?",
+    options: [
+      "1 m/s²",
+      "4 m/s²",
+      "4t + 1 m/s²",
+      "4t² m/s²"
+    ],
+    answer: 1,
+    explanation: "Acceleration is the time derivative of velocity. The derivative of 4t + 1 is 4 m/s²."
+  }
+];
+
+const letters = ["A", "B", "C", "D"];
+const questionsEl = document.getElementById("questions");
+const timerEl = document.getElementById("timer");
+const progressEl = document.getElementById("progress");
+const answeredCount = document.getElementById("answeredCount");
+const resultsEl = document.getElementById("results");
+
+let selections = Array(questions.length).fill(null);
+let secondsLeft = 600;
+let interval = null;
+let submitted = false;
+let finalSummary = "";
+
+function renderQuestions() {
+  questionsEl.innerHTML = "";
+
+  questions.forEach((item, i) => {
+    const article = document.createElement("section");
+    article.className = "question";
+
+    const title = document.createElement("p");
+    title.className = "q-title";
+    title.textContent = `${i + 1}. ${item.q}`;
+    article.appendChild(title);
+
+    const options = document.createElement("div");
+    options.className = "options";
+
+    item.options.forEach((option, j) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className =
+        "option" + (selections[i] === j ? " selected" : "");
+
+      btn.setAttribute(
+        "aria-pressed",
+        selections[i] === j ? "true" : "false"
+      );
+
+      btn.textContent = `${letters[j]}. ${option}`;
+
+      btn.addEventListener("click", () => {
+        if (submitted) return;
+
+        selections[i] = j;
+        renderQuestions();
+        updateProgress();
+      });
+
+      options.appendChild(btn);
+    });
+
+    article.appendChild(options);
+    questionsEl.appendChild(article);
+  });
+}
+
+function updateProgress() {
+  const count = selections.filter(v => v !== null).length;
+
+  answeredCount.textContent =
+    `Answered: ${count} / ${questions.length}`;
+
+  progressEl.style.width =
+    `${count / questions.length * 100}%`;
+}
+
+function formatTime(s) {
+  const m = Math.floor(s / 60).toString().padStart(2, "0");
+  const sec = (s % 60).toString().padStart(2, "0");
+
+  return `${m}:${sec}`;
+}
+
+function tick() {
+  if (submitted) return;
+
+  secondsLeft--;
+  timerEl.textContent = formatTime(secondsLeft);
+
+  if (secondsLeft <= 60) {
+    timerEl.classList.add("warning");
+  }
+
+  if (secondsLeft <= 0) {
+    timerEl.textContent = "00:00";
+    submitTest(true);
+  }
+}
+
+function submitTest(auto = false) {
+  if (submitted) return;
+
+  submitted = true;
+  clearInterval(interval);
+
+  document.querySelectorAll(".option").forEach(button => {
+    button.disabled = true;
+  });
+
+  document.getElementById("submitBtn").disabled = true;
+  document.getElementById("clearBtn").disabled = true;
+
+  const score = questions.reduce((sum, question, i) => {
+    return sum + (selections[i] === question.answer ? 1 : 0);
+  }, 0);
+
+  const percent = Math.round(score / questions.length * 100);
+
+  document.getElementById("scoreText").textContent =
+    `${score} / ${questions.length} (${percent}%)`;
+
+  const unanswered =
+    selections.filter(value => value === null).length;
+
+  document.getElementById("resultSummary").textContent =
+    `${auto
+      ? "Time expired — the test was submitted automatically. "
+      : "Test submitted. "}${unanswered} unanswered question(s).`;
+
+  const review = document.getElementById("review");
+  review.innerHTML = "";
+
+  questions.forEach((question, i) => {
+    const div = document.createElement("div");
+    div.className = "review-item";
+
+    const isCorrect = selections[i] === question.answer;
+    const status = isCorrect ? "Correct" : "Incorrect";
+    const statusClass = isCorrect ? "correct" : "incorrect";
+
+    const chosen = selections[i] === null
+      ? "Not answered"
+      : `${letters[selections[i]]}. ${question.options[selections[i]]}`;
+
+    div.innerHTML = `
+      <strong>${i + 1}. ${escapeHTML(question.q)}</strong>
+      <p class="${statusClass}">${status}</p>
+      <p>Your answer: ${escapeHTML(chosen)}</p>
+      <p><strong>Correct answer:</strong>
+        ${letters[question.answer]}.
+        ${escapeHTML(question.options[question.answer])}
+      </p>
+      <p class="explanation">${escapeHTML(question.explanation)}</p>
+    `;
+
+    review.appendChild(div);
+  });
+
+  finalSummary =
+    `PHY 101 Practice CBT Result: ${score}/20 (${percent}%). Unanswered: ${unanswered}.`;
+
+  resultsEl.style.display = "block";
+  resultsEl.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function escapeHTML(value) {
+  return String(value).replace(/[&<>"']/g, ch => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  }[ch]));
+}
+
+document.getElementById("quizForm").addEventListener("submit", e => {
+  e.preventDefault();
+  submitTest(false);
+});
+
+document.getElementById("clearBtn").addEventListener("click", () => {
+  if (submitted) return;
+
+  selections = Array(questions.length).fill(null);
+  renderQuestions();
+  updateProgress();
+});
+
+document.getElementById("retryBtn").addEventListener("click", () => {
+  selections = Array(questions.length).fill(null);
+  secondsLeft = 600;
+  submitted = false;
+  finalSummary = "";
+
+  timerEl.textContent = "10:00";
+  timerEl.classList.remove("warning");
+
+  document.getElementById("submitBtn").disabled = false;
+  document.getElementById("clearBtn").disabled = false;
+
+  resultsEl.style.display = "none";
+
+  renderQuestions();
+  updateProgress();
+
+  interval = setInterval(tick, 1000);
+  window.scrollTo({ top: 0, behavior: "smooth" });
+});
+
+document.getElementById("copyBtn").addEventListener("click", async () => {
+  try {
+    await navigator.clipboard.writeText(finalSummary);
+    document.getElementById("copyBtn").textContent = "Result Copied";
+  } catch {
+    window.prompt("Copy your result:", finalSummary);
+  }
+});
+
+renderQuestions();
+updateProgress();
+interval = setInterval(tick, 1000);
+</script>
+</body>
+</html>
